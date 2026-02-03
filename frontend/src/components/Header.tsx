@@ -15,7 +15,7 @@ interface HeaderProps {
 
 export function Header({ version, hasUpdate, releaseDate }: HeaderProps) {
   return (
-    <div className="relative">
+    <div className="relative mb-8">
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center gap-3">
           <img
