@@ -83,14 +83,27 @@
     font-family: "Google Sans Flex", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
   
-  /* macOS native window styling */
+  /* macOS native window styling with proper rounded corners */
   @supports (-webkit-backdrop-filter: blur(0)) {
     html {
       background-color: var(--background) !important;
+      /* Ensure content respects macOS window rounded corners */
+      border-radius: 12px;
+      overflow: hidden;
     }
     
     body {
       background-color: var(--background) !important;
+      /* Match macOS Big Sur+ larger corner radius */
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    
+    /* Target the root app container */
+    #root {
+      border-radius: 12px;
+      overflow: hidden;
+      min-height: 100vh;
     }
   }
   
