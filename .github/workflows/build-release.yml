@@ -25,6 +25,23 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package.json
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build Extractor Binary
+        working-directory: helper
+        run: |
+          pip install pyinstaller gallery-dl
+          pyinstaller --onefile --name extractor --collect-all gallery_dl twitter_cli.py
+          # Copy to backend/bin/
+          mkdir -p ../backend/bin
+          cp dist/extractor ../backend/bin/extractor
+          chmod +x ../backend/bin/extractor
+          echo "Extractor built for macOS:"
+          ls -la ../backend/bin/
+
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
@@ -36,24 +53,21 @@ jobs:
         working-directory: frontend
         run: npm run generate-icon
 
-      - name: Build macOS app with ICNS icon
+      - name: Setup macOS ICNS icon
         run: |
-          # Copy ICNS file to build directory for macOS
           mkdir -p build/darwin
           cp frontend/public/icon.icns build/darwin/iconfile.icns
-          
-          # Build with Wails
-          wails build -platform darwin/universal -o "XDown"
+          echo "Icon setup complete:"
+          ls -la build/darwin/
+
+      - name: Build macOS app
+        run: wails build -platform darwin/universal -o "XDown"
 
       - name: Create DMG
         run: |
-          # Install create-dmg if needed
           brew install create-dmg || true
-          
-          # Create DMG
           APP_NAME="XDown"
           DMG_NAME="${APP_NAME}-${{ github.ref_name }}-macOS.dmg"
-          
           create-dmg \
             --volname "${APP_NAME}" \
             --window-pos 200 120 \
@@ -62,15 +76,12 @@ jobs:
             --app-drop-link 450 185 \
             "${DMG_NAME}" \
             "build/bin/${APP_NAME}.app"
-          
           mv "${DMG_NAME}" "build/bin/"
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            build/bin/*.dmg
-            build/bin/*.app/**/Contents/MacOS/*
+          files: build/bin/*.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -91,6 +102,23 @@ jobs:
           node-version: '20'
           cache: 'npm'
           cache-dependency-path: frontend/package.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build Extractor Binary (Windows)
+        working-directory: helper
+        shell: powershell
+        run: |
+          pip install pyinstaller gallery-dl
+          pyinstaller --onefile --name extractor --collect-all gallery_dl twitter_cli.py
+          # Copy to backend/bin/
+          New-Item -ItemType Directory -Force -Path ../backend/bin
+          Copy-Item dist/extractor.exe ../backend/bin/extractor.exe
+          Write-Host "Extractor built for Windows:"
+          Get-ChildItem ../backend/bin/
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
