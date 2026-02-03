@@ -44,19 +44,29 @@ jobs:
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
-      - name: Setup macOS icon
-        run: |
-          mkdir -p build
-          sips -s format png frontend/public/icon.icns --out build/appicon.png
-          echo "Icon converted:"
-          ls -la build/appicon.png
-
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm install
 
       - name: Build macOS ARM64 app
         run: wails build -platform darwin/arm64 -o "XDown"
+
+      - name: Replace App Icon with ICNS
+        run: |
+          APP_NAME="XDown"
+          APP_PATH="build/bin/${APP_NAME}.app"
+          RESOURCES_PATH="${APP_PATH}/Contents/Resources"
+          
+          echo "Replacing icon in: ${RESOURCES_PATH}"
+          ls -la "${RESOURCES_PATH}"
+          
+          # Copy the provided ICNS file to replace the default icon
+          cp frontend/public/icon.icns "${RESOURCES_PATH}/iconfile.icns"
+          
+          # Verify the icon file is valid
+          file "${RESOURCES_PATH}/iconfile.icns"
+          
+          echo "Icon replaced successfully"
 
       - name: Create DMG (ARM64)
         run: |
