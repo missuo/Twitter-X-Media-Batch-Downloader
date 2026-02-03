@@ -7,7 +7,7 @@ on:
       - 'v*'
 
 jobs:
-  build-macos:
+  build-macos-arm64:
     runs-on: macos-latest
     steps:
       - name: Checkout code
@@ -30,16 +30,15 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Build Extractor Binary
+      - name: Build Extractor Binary (ARM64)
         working-directory: helper
         run: |
           pip install pyinstaller gallery-dl
           pyinstaller --onefile --name extractor --collect-all gallery_dl twitter_cli.py
-          # Copy to backend/bin/
           mkdir -p ../backend/bin
           cp dist/extractor ../backend/bin/extractor
           chmod +x ../backend/bin/extractor
-          echo "Extractor built for macOS:"
+          echo "Extractor built for macOS ARM64:"
           ls -la ../backend/bin/
 
       - name: Install Wails CLI
@@ -47,27 +46,23 @@ jobs:
 
       - name: Setup macOS icon
         run: |
-          # Wails v2 uses build/appicon.png for all platforms
-          # Convert ICNS to PNG (1024x1024) for Wails to use
           mkdir -p build
-          # Use sips to convert ICNS to PNG on macOS
           sips -s format png frontend/public/icon.icns --out build/appicon.png
           echo "Icon converted:"
           ls -la build/appicon.png
-          file build/appicon.png
 
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm install
 
-      - name: Build macOS app
-        run: wails build -platform darwin/universal -o "XDown"
+      - name: Build macOS ARM64 app
+        run: wails build -platform darwin/arm64 -o "XDown"
 
-      - name: Create DMG
+      - name: Create DMG (ARM64)
         run: |
           brew install create-dmg || true
           APP_NAME="XDown"
-          DMG_NAME="${APP_NAME}-${{ github.ref_name }}-macOS.dmg"
+          DMG_NAME="${APP_NAME}-${{ github.ref_name }}-macOS-arm64.dmg"
           create-dmg \
             --volname "${APP_NAME}" \
             --window-pos 200 120 \
@@ -78,10 +73,83 @@ jobs:
             "build/bin/${APP_NAME}.app"
           mv "${DMG_NAME}" "build/bin/"
 
-      - name: Upload Release Asset
+      - name: Upload Release Asset (ARM64)
         uses: softprops/action-gh-release@v1
         with:
-          files: build/bin/*.dmg
+          files: build/bin/*-arm64.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-macos-amd64:
+    runs-on: macos-13
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build Extractor Binary (AMD64)
+        working-directory: helper
+        run: |
+          pip install pyinstaller gallery-dl
+          pyinstaller --onefile --name extractor --collect-all gallery_dl twitter_cli.py
+          mkdir -p ../backend/bin
+          cp dist/extractor ../backend/bin/extractor
+          chmod +x ../backend/bin/extractor
+          echo "Extractor built for macOS AMD64:"
+          ls -la ../backend/bin/
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Setup macOS icon
+        run: |
+          mkdir -p build
+          sips -s format png frontend/public/icon.icns --out build/appicon.png
+          echo "Icon converted:"
+          ls -la build/appicon.png
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Build macOS AMD64 app
+        run: wails build -platform darwin/amd64 -o "XDown"
+
+      - name: Create DMG (AMD64)
+        run: |
+          brew install create-dmg || true
+          APP_NAME="XDown"
+          DMG_NAME="${APP_NAME}-${{ github.ref_name }}-macOS-amd64.dmg"
+          create-dmg \
+            --volname "${APP_NAME}" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --app-drop-link 450 185 \
+            "${DMG_NAME}" \
+            "build/bin/${APP_NAME}.app"
+          mv "${DMG_NAME}" "build/bin/"
+
+      - name: Upload Release Asset (AMD64)
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/bin/*-amd64.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
