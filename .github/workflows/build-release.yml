@@ -48,6 +48,10 @@ jobs:
         working-directory: frontend
         run: npm install
 
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
       - name: Build macOS ARM64 app
         run: wails build -platform darwin/arm64 -o "XDown"
 
@@ -67,6 +71,8 @@ jobs:
           file "${RESOURCES_PATH}/iconfile.icns"
           
           echo "Icon replaced successfully"
+
+
 
       - name: Create DMG (ARM64)
         run: |
