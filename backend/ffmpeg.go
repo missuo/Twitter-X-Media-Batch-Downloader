@@ -35,8 +35,44 @@ func GetFFmpegPath() string {
 	}
 }
 
-// IsFFmpegInstalled checks if ffmpeg is available
+// IsFFmpegInstalled checks if ffmpeg is available (either system-installed or bundled)
 func IsFFmpegInstalled() bool {
+	// 1. Check if ffmpeg is available in system PATH
+	if path, err := exec.LookPath("ffmpeg"); err == nil && path != "" {
+		cmd := exec.Command("ffmpeg", "-version")
+		hideWindow(cmd)
+		if err := cmd.Run(); err == nil {
+			return true
+		}
+	}
+
+	// 2. Check common locations on macOS/Unix (GUI apps might not have full PATH)
+	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
+		commonPaths := []string{
+			"/opt/homebrew/bin/ffmpeg", // Apple Silicon
+			"/usr/local/bin/ffmpeg",    // Intel Mac
+			"/usr/bin/ffmpeg",
+			"/bin/ffmpeg",
+		}
+
+		for _, path := range commonPaths {
+			if _, err := os.Stat(path); err == nil {
+				// Verify executable
+				cmd := exec.Command(path, "-version")
+				hideWindow(cmd)
+				if err := cmd.Run(); err == nil {
+					// Add this path to PATH environmental variable for the current process
+					// This ensures subsequent exec.Command("ffmpeg") calls works without full path
+					currentPath := os.Getenv("PATH")
+					newPath := filepath.Dir(path) + string(os.PathListSeparator) + currentPath
+					os.Setenv("PATH", newPath)
+					return true
+				}
+			}
+		}
+	}
+
+	// 3. Check our bundled ffmpeg
 	ffmpegPath := GetFFmpegPath()
 	if _, err := os.Stat(ffmpegPath); err == nil {
 		return true
@@ -266,9 +302,10 @@ func ConvertMP4ToGIF(inputPath, outputPath, quality, resolution string) error {
 
 		// Set FPS based on resolution
 		fps := "15"
-		if resolution == "medium" {
+		switch resolution {
+		case "medium":
 			fps = "10"
-		} else if resolution == "low" {
+		case "low":
 			fps = "8"
 		}
 

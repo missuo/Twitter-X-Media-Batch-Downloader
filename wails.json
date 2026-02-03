@@ -1,7 +1,7 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
-  "name": "TwitterXMediaBatchDownloader",
-  "outputfilename": "TwitterXMediaBatchDownloader",
+  "name": "XDown",
+  "outputfilename": "XDown",
   "frontend:install": "pnpm install",
   "frontend:build": "pnpm run build",
   "frontend:dev:watcher": "pnpm run dev",
@@ -10,8 +10,9 @@
     "name": "afkarxyz"
   },
   "info": {
-    "productName": "Twitter/X Media Batch Downloader",
-    "productVersion": "4.3"
+    "productName": "XDown",
+    "productVersion": "4.3",
+    "copyright": "Copyright © 2024 afkarxyz. All rights reserved."
   },
   "wailsjsdir": "./frontend",
   "assetdir": "./frontend/dist",

@@ -84,7 +84,7 @@ func ExtractOriginalFilename(mediaURL string) string {
 // Only supports JPG (images) and MP4 (videos)
 func EmbedMetadata(filePath string, tweetContent string, tweetURL string, originalFilename string) error {
 	ext := strings.ToLower(filepath.Ext(filePath))
-	
+
 	switch ext {
 	case ".jpg", ".jpeg":
 		return embedImageMetadata(filePath, tweetContent, tweetURL, originalFilename)
@@ -100,7 +100,7 @@ func EmbedMetadata(filePath string, tweetContent string, tweetURL string, origin
 // Since we don't want to add heavy dependencies, we'll use a simple approach:
 // For JPEG: We can use exiftool if available, or skip if not
 // For PNG: Limited support, skip for now
-func embedImageMetadata(filePath string, tweetContent string, tweetURL string, originalFilename string) error {
+func embedImageMetadata(filePath string, _ string, tweetURL string, originalFilename string) error {
 	// Try to use exiftool if available (common tool for metadata)
 	exiftoolPath := findExifTool()
 	if exiftoolPath == "" {
@@ -110,7 +110,7 @@ func embedImageMetadata(filePath string, tweetContent string, tweetURL string, o
 	}
 
 	// Build metadata comment
-	metadataComment := buildMetadataComment(tweetContent, tweetURL, originalFilename)
+	metadataComment := buildMetadataComment(tweetURL, originalFilename)
 
 	// Use exiftool to add comment only (URL | filename)
 	args := []string{
@@ -144,9 +144,9 @@ func embedVideoMetadata(filePath string, tweetContent string, tweetURL string, o
 }
 
 // embedVideoMetadataWithExifTool embeds metadata using ExifTool (preferred for MP4)
-func embedVideoMetadataWithExifTool(exiftoolPath string, filePath string, tweetContent string, tweetURL string, originalFilename string) error {
+func embedVideoMetadataWithExifTool(exiftoolPath string, filePath string, _ string, tweetURL string, originalFilename string) error {
 	// Build metadata comment
-	metadataComment := buildMetadataComment(tweetContent, tweetURL, originalFilename)
+	metadataComment := buildMetadataComment(tweetURL, originalFilename)
 
 	// Use exiftool to add comment only (URL | filename)
 	args := []string{
@@ -167,23 +167,22 @@ func embedVideoMetadataWithExifTool(exiftoolPath string, filePath string, tweetC
 	return nil
 }
 
-
 // buildMetadataComment builds a formatted metadata comment string
-func buildMetadataComment(tweetContent string, tweetURL string, originalFilename string) string {
+func buildMetadataComment(tweetURL string, originalFilename string) string {
 	var parts []string
-	
+
 	if tweetURL != "" {
 		parts = append(parts, tweetURL)
 	}
 	if originalFilename != "" {
 		parts = append(parts, originalFilename)
 	}
-	
+
 	// If no original filename, just return URL (don't add empty part)
 	if len(parts) == 0 {
 		return ""
 	}
-	
+
 	return strings.Join(parts, " | ")
 }
 
@@ -224,4 +223,3 @@ func findExifTool() string {
 
 	return ""
 }
-

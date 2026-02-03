@@ -197,24 +197,24 @@ type CLIResponse struct {
 
 // TimelineEntry represents a single media entry for frontend (converted from MediaItem)
 type TimelineEntry struct {
-	URL           string        `json:"url"`
-	Date          string        `json:"date"`
-	TweetID       TweetIDString `json:"tweet_id"`
-	Type          string        `json:"type"`
-	IsRetweet     bool          `json:"is_retweet"`
-	Extension     string        `json:"extension"`
-	Width         int           `json:"width"`
-	Height        int           `json:"height"`
-	Content       string        `json:"content,omitempty"`
-	ViewCount     int           `json:"view_count,omitempty"`
-	BookmarkCount int           `json:"bookmark_count,omitempty"`
-	FavoriteCount int           `json:"favorite_count,omitempty"`
-	RetweetCount  int           `json:"retweet_count,omitempty"`
-	ReplyCount    int           `json:"reply_count,omitempty"`
-	Source        string        `json:"source,omitempty"`
-	Verified      bool          `json:"verified,omitempty"`
-	OriginalFilename string     `json:"original_filename,omitempty"` // Original filename from API
-	AuthorUsername string       `json:"author_username,omitempty"`   // Username of tweet author (for bookmarks and likes)
+	URL              string        `json:"url"`
+	Date             string        `json:"date"`
+	TweetID          TweetIDString `json:"tweet_id"`
+	Type             string        `json:"type"`
+	IsRetweet        bool          `json:"is_retweet"`
+	Extension        string        `json:"extension"`
+	Width            int           `json:"width"`
+	Height           int           `json:"height"`
+	Content          string        `json:"content,omitempty"`
+	ViewCount        int           `json:"view_count,omitempty"`
+	BookmarkCount    int           `json:"bookmark_count,omitempty"`
+	FavoriteCount    int           `json:"favorite_count,omitempty"`
+	RetweetCount     int           `json:"retweet_count,omitempty"`
+	ReplyCount       int           `json:"reply_count,omitempty"`
+	Source           string        `json:"source,omitempty"`
+	Verified         bool          `json:"verified,omitempty"`
+	OriginalFilename string        `json:"original_filename,omitempty"` // Original filename from API
+	AuthorUsername   string        `json:"author_username,omitempty"`   // Username of tweet author (for bookmarks and likes)
 }
 
 // AccountInfo represents Twitter account information (derived from metadata)
@@ -383,20 +383,20 @@ func buildSearchURL(username, startDate, endDate, mediaFilter string, includeRet
 // convertMetadataToTimelineEntry converts metadata-only tweets to timeline entries
 func convertMetadataToTimelineEntry(meta TweetMetadata) TimelineEntry {
 	return TimelineEntry{
-		URL:           "",
-		Date:          meta.Date,
-		TweetID:       meta.TweetID,
-		Type:          "text",
-		IsRetweet:     meta.RetweetID != 0,
-		Extension:     "txt",
-		Width:         0,
-		Height:        0,
-		Content:       meta.Content,
-		ViewCount:     meta.ViewCount,
-		BookmarkCount: meta.BookmarkCount,
-		FavoriteCount: meta.FavoriteCount,
-		RetweetCount:  meta.RetweetCount,
-		ReplyCount:    meta.ReplyCount,
+		URL:            "",
+		Date:           meta.Date,
+		TweetID:        meta.TweetID,
+		Type:           "text",
+		IsRetweet:      meta.RetweetID != 0,
+		Extension:      "txt",
+		Width:          0,
+		Height:         0,
+		Content:        meta.Content,
+		ViewCount:      meta.ViewCount,
+		BookmarkCount:  meta.BookmarkCount,
+		FavoriteCount:  meta.FavoriteCount,
+		RetweetCount:   meta.RetweetCount,
+		ReplyCount:     meta.ReplyCount,
 		AuthorUsername: meta.Author.Name,
 	}
 }
@@ -413,22 +413,22 @@ func convertToTimelineEntry(media CLIMediaItem) TimelineEntry {
 	}
 
 	entry := TimelineEntry{
-		URL:              media.URL,
-		TweetID:          media.TweetID,
-		Date:             media.Date,
-		Extension:        media.Extension,
-		Width:            media.Width,
-		Height:           media.Height,
-		IsRetweet:        media.RetweetID != 0,
-		Content:          media.Content,
-		ViewCount:        media.ViewCount,
-		BookmarkCount:    media.BookmarkCount,
-		FavoriteCount:    media.FavoriteCount,
-		RetweetCount:     media.RetweetCount,
-		ReplyCount:       media.ReplyCount,
-		Source:           media.Source,
-		Verified:         media.Author.Verified,
-		AuthorUsername:   authorUsername,
+		URL:            media.URL,
+		TweetID:        media.TweetID,
+		Date:           media.Date,
+		Extension:      media.Extension,
+		Width:          media.Width,
+		Height:         media.Height,
+		IsRetweet:      media.RetweetID != 0,
+		Content:        media.Content,
+		ViewCount:      media.ViewCount,
+		BookmarkCount:  media.BookmarkCount,
+		FavoriteCount:  media.FavoriteCount,
+		RetweetCount:   media.RetweetCount,
+		ReplyCount:     media.ReplyCount,
+		Source:         media.Source,
+		Verified:       media.Author.Verified,
+		AuthorUsername: authorUsername,
 		// OriginalFilename will be extracted from URL in download.go
 	}
 
@@ -713,20 +713,20 @@ func ExtractTimeline(req TimelineRequest) (*TwitterResponse, error) {
 		timeline = make([]TimelineEntry, 0, len(cliResponse.Metadata))
 		for _, meta := range cliResponse.Metadata {
 			entry := TimelineEntry{
-				URL:           "", // No media URL for text tweets
-				TweetID:       meta.TweetID,
-				Date:          meta.Date,
-				Type:          "text",
-				IsRetweet:     meta.RetweetID != 0,
-				Extension:     "txt",
-				Width:         0,
-				Height:        0,
-				Content:       meta.Content,
-				ViewCount:     meta.ViewCount,
-				BookmarkCount: meta.BookmarkCount,
-				FavoriteCount: meta.FavoriteCount,
-				RetweetCount:  meta.RetweetCount,
-				ReplyCount:    meta.ReplyCount,
+				URL:            "", // No media URL for text tweets
+				TweetID:        meta.TweetID,
+				Date:           meta.Date,
+				Type:           "text",
+				IsRetweet:      meta.RetweetID != 0,
+				Extension:      "txt",
+				Width:          0,
+				Height:         0,
+				Content:        meta.Content,
+				ViewCount:      meta.ViewCount,
+				BookmarkCount:  meta.BookmarkCount,
+				FavoriteCount:  meta.FavoriteCount,
+				RetweetCount:   meta.RetweetCount,
+				ReplyCount:     meta.ReplyCount,
 				AuthorUsername: meta.Author.Name,
 			}
 			timeline = append(timeline, entry)
@@ -904,9 +904,10 @@ func extractJSON(output string) string {
 	// Find the matching closing brace
 	depth := 0
 	for i := start; i < len(output); i++ {
-		if output[i] == '{' {
+		switch output[i] {
+		case '{':
 			depth++
-		} else if output[i] == '}' {
+		case '}':
 			depth--
 			if depth == 0 {
 				return output[start : i+1]

@@ -1,0 +1,166 @@
+name: Build Release
+
+on:
+  release:
+    types: [published]
+    tags:
+      - 'v*'
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package.json
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Generate icon from SVG
+        working-directory: frontend
+        run: npm run generate-icon
+
+      - name: Build macOS app with ICNS icon
+        run: |
+          # Copy ICNS file to build directory for macOS
+          mkdir -p build/darwin
+          cp frontend/public/icon.icns build/darwin/iconfile.icns
+          
+          # Build with Wails
+          wails build -platform darwin/universal -o "XDown"
+
+      - name: Create DMG
+        run: |
+          # Install create-dmg if needed
+          brew install create-dmg || true
+          
+          # Create DMG
+          APP_NAME="XDown"
+          DMG_NAME="${APP_NAME}-${{ github.ref_name }}-macOS.dmg"
+          
+          create-dmg \
+            --volname "${APP_NAME}" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --app-drop-link 450 185 \
+            "${DMG_NAME}" \
+            "build/bin/${APP_NAME}.app"
+          
+          mv "${DMG_NAME}" "build/bin/"
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            build/bin/*.dmg
+            build/bin/*.app/**/Contents/MacOS/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package.json
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Generate icon
+        working-directory: frontend
+        run: npm run generate-icon
+
+      - name: Build Windows app
+        run: wails build -platform windows/amd64 -o "XDown.exe"
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/bin/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package.json
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Generate icon
+        working-directory: frontend
+        run: npm run generate-icon
+
+      - name: Build Linux app
+        run: wails build -platform linux/amd64 -o "XDown"
+
+      - name: Create AppImage
+        run: |
+          # Create AppImage if tools are available
+          cd build/bin
+          tar czf "XDown-${{ github.ref_name }}-linux.tar.gz" XDown
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            build/bin/XDown
+            build/bin/*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

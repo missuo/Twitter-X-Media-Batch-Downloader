@@ -20,7 +20,7 @@ export function Header({ version, hasUpdate, releaseDate }: HeaderProps) {
         <div className="flex items-center justify-center gap-3">
           <img
             src="/icon.svg"
-            alt="Twitter/X Media Batch Downloader"
+            alt="XDown"
             className="w-12 h-12 cursor-pointer"
             onClick={() => window.location.reload()}
           />
@@ -28,7 +28,7 @@ export function Header({ version, hasUpdate, releaseDate }: HeaderProps) {
             className="text-3xl font-bold cursor-pointer"
             onClick={() => window.location.reload()}
           >
-            Twitter/X Media Batch Downloader
+            XDown
           </h1>
           <div className="relative">
             <Tooltip>

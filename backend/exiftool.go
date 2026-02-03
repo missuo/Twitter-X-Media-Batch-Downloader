@@ -58,8 +58,44 @@ func GetExifToolPath() string {
 	}
 }
 
-// IsExifToolInstalled checks if exiftool is available
+// IsExifToolInstalled checks if exiftool is available (either system-installed or bundled)
 func IsExifToolInstalled() bool {
+	// 1. Check if exiftool is available in system PATH
+	if path, err := exec.LookPath("exiftool"); err == nil && path != "" {
+		// Verify it's executable
+		cmd := exec.Command("exiftool", "-ver")
+		hideWindow(cmd)
+		if err := cmd.Run(); err == nil {
+			return true
+		}
+	}
+
+	// 2. Check common locations on macOS/Unix (GUI apps might not have full PATH)
+	if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
+		commonPaths := []string{
+			"/opt/homebrew/bin/exiftool", // Apple Silicon
+			"/usr/local/bin/exiftool",    // Intel Mac
+			"/usr/bin/exiftool",
+			"/bin/exiftool",
+		}
+
+		for _, path := range commonPaths {
+			if _, err := os.Stat(path); err == nil {
+				// Verify executable
+				cmd := exec.Command(path, "-ver")
+				hideWindow(cmd)
+				if err := cmd.Run(); err == nil {
+					// Add this path to PATH environmental variable for the current process
+					currentPath := os.Getenv("PATH")
+					newPath := filepath.Dir(path) + string(os.PathListSeparator) + currentPath
+					os.Setenv("PATH", newPath)
+					return true
+				}
+			}
+		}
+	}
+
+	// 3. Check our bundled exiftool
 	exiftoolPath := GetExifToolPath()
 	if _, err := os.Stat(exiftoolPath); err == nil {
 		// Test if it's executable by running version command
@@ -345,4 +381,3 @@ func extractExifToolFromTarGz(tarGzPath, destPath string) error {
 
 	return nil
 }
-

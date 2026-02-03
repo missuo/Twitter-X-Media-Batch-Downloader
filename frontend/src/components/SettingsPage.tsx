@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { FolderOpen, Save, RotateCcw, Info, Download, Check } from "lucide-react";
+import { FolderOpen, Save, RotateCcw, Info, Download, Check, RefreshCw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -61,6 +61,22 @@ export function SettingsPage() {
     }, 0);
   }, [tempSettings.themeMode, tempSettings.theme, tempSettings.fontFamily]);
 
+  const checkDependencies = async (showToast = false) => {
+    try {
+      const [ffmpeg, exiftool] = await Promise.all([
+        IsFFmpegInstalled(),
+        IsExifToolInstalled()
+      ]);
+      setFfmpegInstalled(ffmpeg);
+      setExiftoolInstalled(exiftool);
+      if (showToast) {
+        toast.success("Dependencies status updated");
+      }
+    } catch (error) {
+      console.error("Failed to check dependencies:", error);
+    }
+  };
+
   useEffect(() => {
     const loadDefaults = async () => {
       if (!savedSettings.downloadPath) {
@@ -71,9 +87,8 @@ export function SettingsPage() {
     };
     loadDefaults();
     
-    // Check FFmpeg and ExifTool status
-    IsFFmpegInstalled().then(setFfmpegInstalled);
-    IsExifToolInstalled().then(setExiftoolInstalled);
+    // Initial check
+    checkDependencies();
   }, []);
 
   const handleSave = () => {
@@ -109,7 +124,7 @@ export function SettingsPage() {
     setDownloadingFFmpeg(true);
     try {
       await DownloadFFmpeg();
-      setFfmpegInstalled(true);
+      await checkDependencies(); // Re-check after download
       toast.success("FFmpeg downloaded successfully");
     } catch (error) {
       toast.error("Failed to download FFmpeg");
@@ -123,7 +138,7 @@ export function SettingsPage() {
     setDownloadingExifTool(true);
     try {
       await DownloadExifTool();
-      setExiftoolInstalled(true);
+      await checkDependencies(); // Re-check after download
       toast.success("ExifTool downloaded successfully");
     } catch (error) {
       toast.error("Failed to download ExifTool");
@@ -238,22 +253,34 @@ export function SettingsPage() {
         <div className="space-y-4">
           {/* Metadata Embedding */}
           <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              Metadata Embedding
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  <p>ExifTool is required to embed tweet URL and original filename into media file metadata</p>
-                </TooltipContent>
-              </Tooltip>
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                Metadata Embedding
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>ExifTool is required to embed tweet URL and original filename into media file metadata</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Supported: System installed (PATH) or Local download</p>
+                  </TooltipContent>
+                </Tooltip>
+              </Label>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => checkDependencies(true)}
+                title="Check dependencies status"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+              </Button>
+            </div>
             <div className="h-9 flex items-center">
               {exiftoolInstalled ? (
-                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium">
                   <Check className="h-4 w-4" />
-                  Installed
+                  Detected & Installed
                 </div>
               ) : (
                 <Button
@@ -281,22 +308,34 @@ export function SettingsPage() {
 
           {/* GIF Conversion */}
           <div className="space-y-2">
-            <Label className="flex items-center gap-2">
-              GIF Conversion
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent side="top">
-                  <p>FFmpeg is required to convert Twitter's MP4 to actual GIF format</p>
-                </TooltipContent>
-              </Tooltip>
-            </Label>
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2">
+                GIF Conversion
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>FFmpeg is required to convert Twitter's MP4 to actual GIF format</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Supported: System installed (PATH) or Local download</p>
+                  </TooltipContent>
+                </Tooltip>
+              </Label>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => checkDependencies(true)}
+                title="Check dependencies status"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+              </Button>
+            </div>
             <div className="h-9 flex items-center">
               {ffmpegInstalled ? (
-                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 font-medium">
                   <Check className="h-4 w-4" />
-                  Installed
+                  Detected & Installed
                 </div>
               ) : (
                 <Button
