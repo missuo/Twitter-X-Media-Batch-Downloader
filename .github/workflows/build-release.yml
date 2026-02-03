@@ -1,17 +1,27 @@
 name: Build Release
 
 on:
-  release:
-    types: [published]
+  push:
     tags:
       - 'v*'
+  release:
+    types: [published]
 
 jobs:
-  build-macos-arm64:
+  build-macos:
     runs-on: macos-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -22,82 +32,68 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package.json
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Build Extractor Binary (ARM64)
-        working-directory: helper
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
         run: |
+          cd frontend
+          pnpm install
+
+      - name: Update version in source
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          # Update CURRENT_VERSION in App.tsx
+          sed -i '' "s/const CURRENT_VERSION = \"[^\"]*\"/const CURRENT_VERSION = \"$VERSION\"/" frontend/src/App.tsx
+          # Update wails.json
+          sed -i '' "s/\"productVersion\": \"[^\"]*\"/\"productVersion\": \"$VERSION\"/" wails.json
+          echo "Updated version to $VERSION"
+
+      - name: Build Extractor
+        run: |
+          cd helper
           pip install pyinstaller gallery-dl
           pyinstaller --onefile --name extractor --collect-all gallery_dl twitter_cli.py
           mkdir -p ../backend/bin
           cp dist/extractor ../backend/bin/extractor
           chmod +x ../backend/bin/extractor
-          echo "Extractor built for macOS ARM64:"
-          ls -la ../backend/bin/
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
-      - name: Install frontend dependencies
-        working-directory: frontend
-        run: npm install
-
-      - name: Build macOS ARM64 app
+      - name: Build macOS app
         run: |
-          wails build -platform darwin/arm64 -o "XDown" -v 2
-          echo "=== Build Output ==="
-          ls -la build/bin/
-          echo "=== App Structure ==="
-          ls -la build/bin/XDown.app/Contents/ || echo "No Contents dir"
-          ls -la build/bin/XDown.app/Contents/MacOS/ || echo "No MacOS dir"
-          ls -la build/bin/XDown.app/Contents/Resources/ || echo "No Resources dir"
-          echo "=== Frontend Dist ==="
-          ls -la frontend/dist/ || echo "No dist folder"
+          export PATH=$PATH:$(go env GOPATH)/bin
+          wails build -platform darwin/arm64 -o "XDown"
 
-      - name: Replace App Icon with ICNS
+      - name: Replace icon
         run: |
-          APP_NAME="XDown"
-          APP_PATH="build/bin/${APP_NAME}.app"
-          RESOURCES_PATH="${APP_PATH}/Contents/Resources"
-          
-          echo "Replacing icon in: ${RESOURCES_PATH}"
-          ls -la "${RESOURCES_PATH}"
-          
-          # Copy the provided ICNS file to replace the default icon
-          cp frontend/public/icon.icns "${RESOURCES_PATH}/iconfile.icns"
-          
-          # Verify the icon file is valid
-          file "${RESOURCES_PATH}/iconfile.icns"
-          
-          echo "Icon replaced successfully"
+          cp frontend/public/icon.icns build/bin/XDown.app/Contents/Resources/iconfile.icns
 
-
-
-      - name: Create DMG (ARM64)
+      - name: Create DMG
         run: |
           brew install create-dmg || true
-          APP_NAME="XDown"
-          DMG_NAME="${APP_NAME}-${{ github.ref_name }}-macOS-arm64.dmg"
           create-dmg \
-            --volname "${APP_NAME}" \
+            --volname "XDown" \
             --window-pos 200 120 \
             --window-size 600 400 \
             --icon-size 100 \
             --app-drop-link 450 185 \
-            "${DMG_NAME}" \
-            "build/bin/${APP_NAME}.app"
-          mv "${DMG_NAME}" "build/bin/"
+            "XDown-${{ steps.version.outputs.VERSION }}-macOS-arm64.dmg" \
+            "build/bin/XDown.app"
 
-      - name: Upload Release Asset (ARM64)
+      - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
-          files: build/bin/*-arm64.dmg
+          files: XDown-*.dmg
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -106,6 +102,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        shell: pwsh
+        run: |
+          $VERSION = "${env:GITHUB_REF}" -replace 'refs/tags/v', ''
+          "VERSION=$VERSION" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "Building version: $VERSION"
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -116,43 +122,49 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package.json
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Build Extractor Binary (Windows)
-        working-directory: helper
-        shell: powershell
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
         run: |
+          cd frontend
+          pnpm install
+
+      - name: Update version in source
+        shell: pwsh
+        run: |
+          $VERSION = "${{ steps.version.outputs.VERSION }}"
+          (Get-Content frontend/src/App.tsx) -replace 'const CURRENT_VERSION = "[^"]*"', "const CURRENT_VERSION = `"$VERSION`"" | Set-Content frontend/src/App.tsx
+          (Get-Content wails.json) -replace '"productVersion": "[^"]*"', "`"productVersion`": `"$VERSION`"" | Set-Content wails.json
+          "Updated version to $VERSION"
+
+      - name: Build Extractor
+        run: |
+          cd helper
           pip install pyinstaller gallery-dl
           pyinstaller --onefile --name extractor --collect-all gallery_dl twitter_cli.py
-          # Copy to backend/bin/
           New-Item -ItemType Directory -Force -Path ../backend/bin
           Copy-Item dist/extractor.exe ../backend/bin/extractor.exe
-          Write-Host "Extractor built for Windows:"
-          Get-ChildItem ../backend/bin/
 
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
-      - name: Install frontend dependencies
-        working-directory: frontend
-        run: npm install
-
-      - name: Generate icon
-        working-directory: frontend
-        run: npm run generate-icon
-
       - name: Build Windows app
-        run: wails build -platform windows/amd64 -o "XDown.exe"
+        run: |
+          $env:PATH = "$env:PATH;$(go env GOPATH)\bin"
+          wails build -platform windows/amd64 -o "XDown.exe"
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
-          files: build/bin/*.exe
+          files: build/bin/XDown.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

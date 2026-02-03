@@ -34,7 +34,7 @@ import { ExtractTimeline, ExtractDateRange, SaveAccountToDBWithStatus, CleanupEx
 
 const HISTORY_KEY = "twitter_media_fetch_history";
 const MAX_HISTORY = 10;
-const CURRENT_VERSION = "4.3";
+const CURRENT_VERSION = "4.3.1";
 const BATCH_SIZE = 200; // Fetch in batches for progressive display and resume
 
 function formatNumberWithComma(num: number): string {

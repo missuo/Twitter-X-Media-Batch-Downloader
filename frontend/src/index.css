@@ -83,23 +83,14 @@
     font-family: "Google Sans Flex", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
   
-  /* macOS vibrancy and rounded corners support */
+  /* macOS native window styling */
   @supports (-webkit-backdrop-filter: blur(0)) {
     html {
-      /* Allow the vibrancy effect from macOS to show through */
-      background-color: transparent !important;
+      background-color: var(--background) !important;
     }
     
     body {
-      /* Subtle semi-transparent background for readability */
-      background-color: oklch(1 0 0 / 85%) !important;
-      /* Ensure proper backdrop blur for macOS vibrancy */
-      -webkit-backdrop-filter: blur(20px);
-      backdrop-filter: blur(20px);
-    }
-    
-    .dark body {
-      background-color: oklch(0.145 0 0 / 85%) !important;
+      background-color: var(--background) !important;
     }
   }
   
