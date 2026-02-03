@@ -49,7 +49,16 @@ jobs:
         run: npm install
 
       - name: Build macOS ARM64 app
-        run: wails build -platform darwin/arm64 -o "XDown"
+        run: |
+          wails build -platform darwin/arm64 -o "XDown" -v 2
+          echo "=== Build Output ==="
+          ls -la build/bin/
+          echo "=== App Structure ==="
+          ls -la build/bin/XDown.app/Contents/ || echo "No Contents dir"
+          ls -la build/bin/XDown.app/Contents/MacOS/ || echo "No MacOS dir"
+          ls -la build/bin/XDown.app/Contents/Resources/ || echo "No Resources dir"
+          echo "=== Frontend Dist ==="
+          ls -la frontend/dist/ || echo "No dist folder"
 
       - name: Replace App Icon with ICNS
         run: |
