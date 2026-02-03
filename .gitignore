@@ -7,7 +7,8 @@ backend/bin/
 *.so
 
 # Wails Generated Files
-frontend/wailsjs/
+# Note: wailsjs is required for CI builds, do not ignore
+# frontend/wailsjs/
 
 # Go
 *.test
